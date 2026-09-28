@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>BookTracker</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#1f3a5f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="BookTracker">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #1f3a5f; color: #fff;
+           padding: env(safe-area-inset-top) 1.5rem env(safe-area-inset-bottom); }
+    main { max-width: 32rem; margin: 0 auto; padding-top: 3rem; }
+    button, .btn { display: block; width: 100%; box-sizing: border-box; padding: 1rem; font-size: 1.1rem;
+                   border: 0; border-radius: .75rem; background: #f2c14e; color: #0d1b2a;
+                   text-align: center; text-decoration: none; margin-top: 1rem; }
+    #mode { opacity: .7; font-size: .9rem; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>BookTracker</h1>
+    <div id="view">Loading…</div>
+    <p id="mode"></p>
+  </main>
+  <script>
+    const view = document.getElementById("view");
+    const standalone = window.navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+    document.getElementById("mode").textContent = standalone ? "Running as installed app" : "Running in browser";
+
+    fetch("/api/me", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me) => {
+        if (me) {
+          view.innerHTML = "";
+          const p = document.createElement("p");
+          p.textContent = "Signed in as " + me.email;
+          const f = document.createElement("form");
+          f.method = "post"; f.action = "/auth/logout";
+          f.innerHTML = "<button>Sign out</button>";
+          view.append(p, f);
+        } else {
+          view.innerHTML = '<a class="btn" href="/auth/login">Sign in with Google</a>';
+        }
+      })
+      .catch(() => { view.textContent = "You appear to be offline."; });
+
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
+  </script>
+</body>
+</html>
