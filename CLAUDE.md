@@ -13,6 +13,7 @@ A multi-user, friends-only phone app (installed to the home screen as a PWA) tha
   - The API key lives in a Worker secret. It never reaches the client.
 - **Data model:** three levels: Work -> Edition -> Copy, with a shared catalog and per-user overrides.
 - **Free tier first:** design to stay inside Cloudflare free limits. See "Platform constraints".
+- **Workflow:** browser-only (Claude Code on the web + GitHub + Cloudflare dashboard). See "Development workflow" and "Guided walkthroughs".
 
 ## Features (all in scope)
 
@@ -160,10 +161,39 @@ Success criteria (owner to confirm/adjust):
 
 Add automated tests for: duplicate logic, confidence routing, locked fields, quota enforcement, and user scoping.
 
+## Development workflow (browser-only)
+
+The owner works **only in the browser** (Claude Code on the web at claude.ai/code, GitHub, and the Cloudflare dashboard). There is no local terminal, no local dev server, and no desktop tooling. Do not assume any of these.
+
+- Code lives in a private GitHub repo. Work in cloud sessions and deliver changes as reviewable PRs.
+- **Deployment:** the plan is Cloudflare's GitHub integration (Workers Builds), so merging to the main branch deploys automatically. Verify current Cloudflare setup steps before instructing the owner. Do not attempt to deploy from the cloud session unless credentials are explicitly provided.
+- **Testing is on the deployed HTTPS URL**, on the owner's phone. Camera access and PWA install need HTTPS, so this is the real test environment.
+- After every change, tell the owner exactly what to check on the deployed site (which screen, which action, what result to expect), in plain steps.
+- **Secrets** (the Anthropic API key, any OAuth client secrets) are set by the owner as Worker secrets in the Cloudflare dashboard. They must never be committed to GitHub, written into this file, or pasted into chat. If a local `.dev.vars` file is ever used, it must be git-ignored.
+- Local-only tools (e.g. `wrangler dev`) may not be available. Prefer approaches that work through the GitHub -> Cloudflare deploy path, and write automated tests that run in the cloud session.
+
+## Guided walkthroughs (required)
+
+The owner is comfortable with web development (Flask, React, SQLite) but has **not used Cloudflare's dashboard or Workers before**. Whenever a step needs the owner to act outside the code, **stop and walk them through it step by step** before continuing. Do not assume it is already done, and do not skip ahead.
+
+Give one action at a time, say where to click, what they should see, and ask them to confirm before the next step. Verify current instructions rather than relying on memory, because dashboards change.
+
+Walk the owner through each of these at the point it is first needed:
+
+1. **Cloudflare account and project setup (start of phase 1).** Creating or signing in to a Cloudflare account, connecting the GitHub repo through Workers Builds, and confirming the first deploy works and gives a live URL.
+2. **D1 database (phase 1).** Creating the D1 database, binding it to the Worker, and running the schema/migrations. Explain how migrations are applied in this browser-only setup.
+3. **Auth setup (phase 1).** Setting up Cloudflare Access or the chosen sign-in provider, adding the friends allowlist, and testing login from the **installed home-screen PWA on the owner's phone**, not just the browser.
+4. **R2 bucket (when covers are first stored).** Creating the bucket and binding it to the Worker.
+5. **Anthropic API key (before phase 2).** Explain what the key is, that billing is separate from their claude.ai subscription, and how to create it in the Anthropic Console. Recommend setting a monthly spend limit there. Then show how to add it as a Worker secret in the Cloudflare dashboard, and how to confirm it works with a harmless test call. Remind them never to paste the key into chat, GitHub, or files.
+6. **PWA install on the phone (phase 1).** How to add the deployed site to the home screen on their phone and confirm it opens in standalone mode.
+7. **Test photos (before phase 2).** How to get the 15-20 photos into `/test-photos/` through GitHub's web upload, and to keep the repo private.
+
+If a walkthrough step fails or the owner reports something different from what you expected, diagnose it with them before moving on. When a phase finishes, summarise what was built, what to test, and what the next walkthrough will involve.
+
 ## Working agreements
 
 - Ask before changing any "Locked decision".
-- Keep secrets in Worker secrets / `.dev.vars` (git-ignored). Never commit keys.
+- Keep secrets in Worker secrets (set in the Cloudflare dashboard). Never commit keys.
 - Keep thresholds, quotas, and source priority in a single config module.
 - Write small, reviewable commits per feature. Keep this file up to date as decisions change.
 - When something in "Platform constraints" turns out to differ from reality, update this file.
