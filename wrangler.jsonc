@@ -3,5 +3,13 @@
   "name": "booktracker",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "booktracker-db",
+      "database_id": "46d07631-9b2d-49ae-9f25-ebd2197ce5de",
+      "migrations_dir": "migrations"
+    }
+  ]
 }
